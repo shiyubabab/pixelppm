@@ -32,12 +32,14 @@ typedef struct {
     uint8_t r;
     uint8_t g;
     uint8_t b;
+	uint8_t alpha;
 } pp_color_t;
 
 #define PP_COLOR_HEX(hex) ((pp_color_t){ \
     .r = (uint8_t)(((hex) >> 16) & 0xFF), \
     .g = (uint8_t)(((hex) >> 8 ) & 0xFF), \
-    .b = (uint8_t)(((hex) >> 0 ) & 0xFF)  \
+    .b = (uint8_t)(((hex) >> 0 ) & 0xFF), \
+	.alpha = 255						  \
 })
 
 typedef struct {
@@ -108,10 +110,23 @@ void pp_canvas_draw_watermark(pp_canvas_t * canvas, const char * text);
 static inline void pp_draw_pixel_to_canvas(pp_canvas_t * canvas, int32_t x, int32_t y, pp_color_t color) 
 {
     if (x >= 0 && x < canvas->width && y >= 0 && y < canvas->height) {
+		if(color.alpha == 0) return;
+
         size_t idx = (y * canvas->width + x) * 3;
-        canvas->buffer[idx + 0] = color.r;
-        canvas->buffer[idx + 1] = color.g;
-        canvas->buffer[idx + 2] = color.b;
+		if(color.alpha == 255){
+			canvas->buffer[idx + 0] = color.r;
+			canvas->buffer[idx + 1] = color.g;
+			canvas->buffer[idx + 2] = color.b;
+			return;
+		}
+
+		uint8_t bg_r = canvas->buffer[idx + 0];
+		uint8_t bg_g = canvas->buffer[idx + 1];
+		uint8_t bg_b = canvas->buffer[idx + 2];
+
+		canvas->buffer[idx + 0] = (uint8_t)(((uint32_t)color.r * color.alpha + (uint32_t)bg_r * (255 - color.alpha)) >> 8);
+		canvas->buffer[idx + 1] = (uint8_t)(((uint32_t)color.g * color.alpha + (uint32_t)bg_g * (255 - color.alpha)) >> 8);
+		canvas->buffer[idx + 2] = (uint8_t)(((uint32_t)color.b * color.alpha + (uint32_t)bg_b * (255 - color.alpha)) >> 8);
     }
 }
 
@@ -288,7 +303,7 @@ void pp_canvas_draw_watermark(pp_canvas_t * canvas, const char * text)
     };
     
     int32_t px = 12, py = canvas->height - 22;
-    pp_color_t white = {255, 255, 255};
+    pp_color_t white = {255, 255, 255, 255};
     
     while (*text) {
         uint8_t ch = (uint8_t)*text;

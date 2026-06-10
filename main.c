@@ -11,6 +11,7 @@
 #include <draw/pp_area_dsc_draw.h>
 
 #include <image/ui_avatar.h>
+#include <image/person.h>
 
 #include <core/pp_obj.h>
 #include <core/pp_disp.h>
@@ -25,7 +26,7 @@
 int main(void) 
 {
     // 1. 初始化物理设备层 (使用 PARTIAL 局部模式，限定单次分幅切片最大 35 行像素)
-    if (!pp_disp_init(400, 400, PP_RENDER_MODE_PARTIAL, 35)) {
+    if (!pp_disp_init(500, 500, PP_RENDER_MODE_PARTIAL, 35)) {
         PP_MAIN_ERROR("Failed to initialize physical Display layer.");
         return -1;
     }
@@ -37,14 +38,19 @@ int main(void)
     // 2. 轴心静态参照物建立 (用来验证局部刷新时它是否会被 AABB 机制无感拦截)
     // -------------------------------------------------------------------------
     pp_obj_t * static_anchor = pp_obj_create(global_display->root_obj);
-    pp_obj_set_pos(static_anchor, 0, 70);
+    pp_obj_set_pos(static_anchor, 0, 0);
     pp_obj_set_size(static_anchor, 90, 45);
     pp_obj_set_bg_color(static_anchor, PP_COLOR_HEX(0x009688)); // 青绿色
 
     pp_obj_t * static_anchor_out = pp_obj_create(global_display->root_obj);
-    pp_obj_set_pos(static_anchor_out, 0, 0);
+    pp_obj_set_pos(static_anchor_out, 50, 50);
 	pp_obj_set_image_src(static_anchor_out,&my_avatar);
     pp_obj_set_size(static_anchor_out, my_avatar.width, my_avatar.height);
+
+    pp_obj_t * person = pp_obj_create(global_display->root_obj);
+    pp_obj_set_pos(person, 100, 50);
+	pp_obj_set_image_src(person,&my_person);
+    pp_obj_set_size(person, my_person.width, my_person.height);
 
     // -------------------------------------------------------------------------
     // 3. 核心运动压测目标：动态多形态按钮 (Moving Target)
@@ -60,12 +66,6 @@ int main(void)
     PP_MAIN_INFO("====== Executing Frame 1: Core System Initialization ======");
     
     // 全屏报脏以加载首帧底画
-	pp_style_t * bs = pp_obj_get_style(my_button);
-	pp_style_t * as = pp_obj_get_style(static_anchor);
-	pp_style_t * gs = pp_obj_get_style(global_display->root_obj);
-	PP_MAIN_INFO("bs : r %d g %d b %d",bs->bg_color.r,bs->bg_color.g,bs->bg_color.b);
-	PP_MAIN_INFO("as : r %d g %d b %d",as->bg_color.r,as->bg_color.g,as->bg_color.b);
-	PP_MAIN_INFO("gs : r %d g %d b %d",gs->bg_color.r,gs->bg_color.g,gs->bg_color.b);
     pp_disp_invalidate_area(&global_display->root_obj->coords);
     
     // 调用已经移位重构的专门刷新时钟函数！

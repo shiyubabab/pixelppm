@@ -81,6 +81,7 @@ void * pp_malloc(size_t size)
         PP_MEM_ERROR("OOM! Failed to allocate %zu bytes", size);
         return NULL;
     }
+	memset(p,0,total_size);
 
     p->size = aligned_size;
     p->magic = PP_MEM_MAGIC;
