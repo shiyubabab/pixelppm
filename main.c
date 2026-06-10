@@ -96,6 +96,10 @@ int main(void)
     pp_canvas_export_ppm(global_display->canvas, "iris_gfx_output1.ppm");
     PP_MAIN_INFO("Frame 2 assets outputted to 'iris_gfx_output1.ppm'");
 
+
+    pp_display_refr_timer();
+    pp_canvas_export_ppm(global_display->canvas, "iris_gfx_output2.ppm");
+
     // -------------------------------------------------------------------------
     // 4. 清理物理显示驱动，完美退场
     // -------------------------------------------------------------------------

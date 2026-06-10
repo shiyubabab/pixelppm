@@ -24,18 +24,20 @@ static void pp_refr_obj_and_children(pp_canvas_t * canvas, pp_obj_t * obj, const
 
 void pp_display_refr_timer(void)
 {
-    if (!global_display || global_display->inv_p == 0) return;
+    if (global_display && global_display->inv_p != 0) {
+		// Phase 1: Optimize overlap bounding layouts
+		pp_refr_join_area();
 
-    // Phase 1: Optimize overlap bounding layouts
-    pp_refr_join_area();
+		// Phase 2: Consume active ledger updates through cutting processors
+		pp_refr_invalid_areas();
 
-    // Phase 2: Consume active ledger updates through cutting processors
-    pp_refr_invalid_areas();
+		// Phase 3: Free the cache list slots down
+		memset(global_display->inv_areas, 0, sizeof(global_display->inv_areas));
+		memset(global_display->inv_area_joined, 0, sizeof(global_display->inv_area_joined));
+		global_display->inv_p = 0;
+	}
 
-    // Phase 3: Free the cache list slots down
-    memset(global_display->inv_areas, 0, sizeof(global_display->inv_areas));
-    memset(global_display->inv_area_joined, 0, sizeof(global_display->inv_area_joined));
-    global_display->inv_p = 0;
+	pp_canvas_change_foreground_point(global_display->canvas);
 }
 
 static void pp_refr_join_area(void)

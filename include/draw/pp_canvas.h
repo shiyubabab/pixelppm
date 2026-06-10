@@ -23,6 +23,12 @@
 extern "C" {
 #endif
 
+#define PP_CANVAS_GET_FG(canvas_ptr) \
+	((canvas_ptr)->buffer + (canvas_ptr)->curr_p)
+
+#define PP_CANVAS_GET_BG(canvas_ptr) \
+	((canvas_ptr)->buffer +(((canvas_ptr)->curr_p == 0)?(canvas_ptr)->buffer_size:0))
+
 /*oOoOoOoOoOoOoOoOoOoO
  * DATA STRUCTURES
  *oOoOoOoOoOoOoOoOoOoO*/
@@ -30,6 +36,7 @@ extern "C" {
 // Canvas entity packed with physical geometry and buffer metadata
 typedef struct {
     uint8_t * buffer;       // Raw RGB data stream pointer
+	size_t curr_p;
     int32_t width;          // Horizontal dimensions in pixels
     int32_t height;         // Vertical dimensions in pixels
     size_t buffer_size;     // Pre-calculated byte budget (width * height * 3)
@@ -43,6 +50,7 @@ pp_canvas_t * pp_canvas_create(int32_t w, int32_t h);
 void          pp_canvas_destroy(pp_canvas_t * canvas);
 void          pp_canvas_clear(pp_canvas_t * canvas, uint8_t r, uint8_t g, uint8_t b);
 void          pp_canvas_export_ppm(const pp_canvas_t * canvas, const char * filename);
+void          pp_canvas_change_foreground_point(pp_canvas_t * canvas);
 
 #ifdef __cplusplus
 }
@@ -80,9 +88,10 @@ pp_canvas_t * pp_canvas_create(int32_t w, int32_t h)
     canvas->width = w;
     canvas->height = h;
     canvas->buffer_size = (size_t)w * h * 3; // Standard 24-bit RGB pixel payload packing
+	canvas->curr_p = 0;
 
     // 2. Allocate the deep pixel block memory pool tracking
-    canvas->buffer = (uint8_t *)pp_malloc(canvas->buffer_size);
+    canvas->buffer = (uint8_t *)pp_malloc(2 * canvas->buffer_size);
     if (canvas->buffer == NULL) {
         PP_CANVAS_ERROR("OOM! Failed to allocate physical pixel buffer stream: %zu bytes", canvas->buffer_size);
         pp_free(canvas); 
@@ -120,9 +129,9 @@ void pp_canvas_clear(pp_canvas_t * canvas, uint8_t r, uint8_t g, uint8_t b)
     }
 
     for (size_t i = 0; i < (size_t)canvas->width * canvas->height; i++) {
-        canvas->buffer[i * 3 + 0] = r;
-        canvas->buffer[i * 3 + 1] = g;
-        canvas->buffer[i * 3 + 2] = b;
+        PP_CANVAS_GET_FG(canvas)[i * 3 + 0] = r;
+        PP_CANVAS_GET_FG(canvas)[i * 3 + 1] = g;
+        PP_CANVAS_GET_FG(canvas)[i * 3 + 2] = b;
     }
 }
 
@@ -146,10 +155,24 @@ void pp_canvas_export_ppm(const pp_canvas_t * canvas, const char * filename)
     fprintf(f, "P6\n%d %d\n255\n", canvas->width, canvas->height);
     
     // Laser push the whole packed buffer block directly onto disk
-    fwrite(canvas->buffer, canvas->buffer_size, 1, f);
+    fwrite(PP_CANVAS_GET_FG(canvas), canvas->buffer_size, 1, f);
     fclose(f);
     
     PP_CANVAS_INFO("Frame asset securely pushed down to disk path: %s", filename);
+}
+
+
+void pp_canvas_change_foreground_point(pp_canvas_t * canvas)
+{
+    if (canvas == NULL || canvas->buffer == NULL) {
+        PP_CANVAS_ERROR("Attempted to clear a NULL canvas context pointer.");
+        return;
+    }
+
+	size_t last_p = canvas->curr_p;
+	canvas->curr_p = (canvas->curr_p == 0) ? canvas->buffer_size: 0;
+    PP_CANVAS_INFO("We are changing the foreground point: [%zu] - > [%zu]",last_p,canvas->curr_p);
+
 }
 
 #endif /* PP_CANVAS_IMPLEMENTATION */

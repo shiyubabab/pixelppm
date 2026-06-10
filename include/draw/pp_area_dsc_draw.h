@@ -114,19 +114,19 @@ static inline void pp_draw_pixel_to_canvas(pp_canvas_t * canvas, int32_t x, int3
 
         size_t idx = (y * canvas->width + x) * 3;
 		if(color.alpha == 255){
-			canvas->buffer[idx + 0] = color.r;
-			canvas->buffer[idx + 1] = color.g;
-			canvas->buffer[idx + 2] = color.b;
+			PP_CANVAS_GET_BG(canvas)[idx + 0] = color.r;
+			PP_CANVAS_GET_BG(canvas)[idx + 1] = color.g;
+			PP_CANVAS_GET_BG(canvas)[idx + 2] = color.b;
 			return;
 		}
 
-		uint8_t bg_r = canvas->buffer[idx + 0];
-		uint8_t bg_g = canvas->buffer[idx + 1];
-		uint8_t bg_b = canvas->buffer[idx + 2];
+		uint8_t bg_r = PP_CANVAS_GET_BG(canvas)[idx + 0];
+		uint8_t bg_g = PP_CANVAS_GET_BG(canvas)[idx + 1];
+		uint8_t bg_b = PP_CANVAS_GET_BG(canvas)[idx + 2];
 
-		canvas->buffer[idx + 0] = (uint8_t)(((uint32_t)color.r * color.alpha + (uint32_t)bg_r * (255 - color.alpha)) >> 8);
-		canvas->buffer[idx + 1] = (uint8_t)(((uint32_t)color.g * color.alpha + (uint32_t)bg_g * (255 - color.alpha)) >> 8);
-		canvas->buffer[idx + 2] = (uint8_t)(((uint32_t)color.b * color.alpha + (uint32_t)bg_b * (255 - color.alpha)) >> 8);
+		PP_CANVAS_GET_BG(canvas)[idx + 0] = (uint8_t)(((uint32_t)color.r * color.alpha + (uint32_t)bg_r * (255 - color.alpha)) >> 8);
+		PP_CANVAS_GET_BG(canvas)[idx + 1] = (uint8_t)(((uint32_t)color.g * color.alpha + (uint32_t)bg_g * (255 - color.alpha)) >> 8);
+		PP_CANVAS_GET_BG(canvas)[idx + 2] = (uint8_t)(((uint32_t)color.b * color.alpha + (uint32_t)bg_b * (255 - color.alpha)) >> 8);
     }
 }
 
