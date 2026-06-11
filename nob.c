@@ -20,6 +20,7 @@ void cc(Varray *cmd)
 {
     nob_cmd_append(cmd, "gcc");
     nob_cmd_append(cmd, "-Wall", "-Wextra");
+    nob_cmd_append(cmd, "-D_GNU_SOURCE");
     nob_cmd_append(cmd, "-ggdb");
     nob_cmd_append(cmd, "-Wno-unused-function");
 }

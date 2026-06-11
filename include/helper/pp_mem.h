@@ -33,6 +33,18 @@ void * pp_zalloc(size_t num, size_t size);
 void   pp_free(void * data);
 void * pp_realloc(void * data_p, size_t new_size);
 
+#if defined(X86_ARCH)
+#define pp_memcpy pp_memcpy_simd
+#else
+#define pp_memcpy memcpy
+#endif
+
+#ifdef X86_ARCH
+#include <emmintrin.h>
+void * pp_memcpy_simd(void *dst, const void * src, size_t n);
+#endif // X86_ARCH
+
+
 #ifdef __cplusplus
 }
 #endif
@@ -173,5 +185,50 @@ void * pp_realloc(void * data_p, size_t new_size)
     pp_free(data_p);
     return new_data_ptr;
 }
+
+#ifdef X86_ARCH
+void * pp_memcpy_simd(void *dst, const void * src, size_t n)
+{
+	uint8_t *d = (uint8_t *)dst;
+	const uint8_t *s = (const uint8_t *)src;
+
+	while(((uintptr_t)d & 0x0F) && n > 0){
+		*d++ = *s++;
+		n--;
+	}
+
+	const size_t step = 64;
+	while(n >= step){
+		__m128i r0 = _mm_loadu_si128((__m128i *)(s + 0));
+		__m128i r1 = _mm_loadu_si128((__m128i *)(s + 16));
+		__m128i r2 = _mm_loadu_si128((__m128i *)(s + 32));
+		__m128i r3 = _mm_loadu_si128((__m128i *)(s + 48));
+
+
+		_mm_storeu_si128((__m128i *)(d + 0),  r0);
+		_mm_storeu_si128((__m128i *)(d + 16), r1);
+		_mm_storeu_si128((__m128i *)(d + 32), r2);
+		_mm_storeu_si128((__m128i *)(d + 48), r3);
+
+		s += step;
+		d += step;
+		n -= step;
+	}
+
+	while(n>=16){
+		__m128i r = _mm_loadu_si128((__m128i *)s);
+		_mm_storeu_si128((__m128i *)d,  r);
+		s += 16;
+		d += 16;
+		n -= 16;
+	}
+
+	while(n--){
+		*d++ = *s++;
+	}
+
+	return dst;
+}
+#endif // X86_ARCH
 
 #endif /* PP_MEM_IMPLEMENTATION */

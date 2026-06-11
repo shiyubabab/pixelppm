@@ -9,9 +9,14 @@
 #ifndef PP_CANVAS_H
 #define PP_CANVAS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include "thread/pp_thread.h"
 
 #ifndef PP_CANVAS_INFO
 #include <stdio.h>
@@ -19,15 +24,15 @@
 #define PP_CANVAS_ERROR(fmt,...) fprintf(stderr, "CANVAS ERROR %s %d:" fmt "\n", __func__, __LINE__, ##__VA_ARGS__)
 #endif // PP_CANVAS_INFO
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define PP_CANVAS_GET_FG(canvas_ptr) \
 	((canvas_ptr)->buffer + (canvas_ptr)->curr_p)
 
 #define PP_CANVAS_GET_BG(canvas_ptr) \
 	((canvas_ptr)->buffer +(((canvas_ptr)->curr_p == 0)?(canvas_ptr)->buffer_size:0))
+
+#ifndef PP_WEAK
+#define PP_WEAK  __attribute__((weak))
+#endif
 
 /*oOoOoOoOoOoOoOoOoOoO
  * DATA STRUCTURES
@@ -51,6 +56,9 @@ void          pp_canvas_destroy(pp_canvas_t * canvas);
 void          pp_canvas_clear(pp_canvas_t * canvas, uint8_t r, uint8_t g, uint8_t b);
 void          pp_canvas_export_ppm(const pp_canvas_t * canvas, const char * filename);
 void          pp_canvas_change_foreground_point(pp_canvas_t * canvas);
+void		  pp_canvas_engine_start(pp_canvas_t * canvas);
+
+PP_WEAK void * pp_ffplay_consumer_thread(void *arg);
 
 #ifdef __cplusplus
 }
@@ -173,6 +181,61 @@ void pp_canvas_change_foreground_point(pp_canvas_t * canvas)
 	canvas->curr_p = (canvas->curr_p == 0) ? canvas->buffer_size: 0;
     PP_CANVAS_INFO("We are changing the foreground point: [%zu] - > [%zu]",last_p,canvas->curr_p);
 
+	pp_memcpy(canvas->buffer + last_p, canvas->buffer + canvas->curr_p, canvas->buffer_size);
+
 }
+
+PP_WEAK void * pp_ffplay_consumer_thread(void * arg)
+{
+	pp_canvas_t * canvas = (pp_canvas_t *)arg;
+	PP_CANVAS_INFO("Canvas : width [%d] height [%d]",canvas->width,canvas->height);
+	return NULL;
+
+#if 0
+	pp_canvas_t * canvas = (pp_canvas_t *)arg;
+	size_t frame_bytes = (size_t)canvas->width * canvas->height * 3;
+
+	char cmd[256];
+	snprintf(cmd, sizeof(cmd), "ffplay -f rawvideo -pixel_format rgb24 -video_size %dx%d -framerate 60 -i -", 
+			 canvas->width, canvas->height);
+
+	FILE * ffplay_pipe = popen(cmd, "w");
+	if (!ffplay_pipe) {
+		PP_CANVAS_ERROR("🚨 [FRAMEWORK WARNING] Default ffplay pipe failed to launch!");
+		return NULL;
+	}
+
+	PP_CANVAS_INFO("💡 [FRAMEWORK] Default weak ffplay consumer thread is running...");
+
+	while (canvas->is_running) {
+		pthread_mutex_lock(&canvas->ptr_mutex);
+		while (!canvas->fg_has_changed && canvas->is_running) {
+			pthread_cond_wait(&canvas->ptr_cond, &canvas->ptr_mutex);
+		}
+
+		if (!canvas->is_running) {
+			pthread_mutex_unlock(&canvas->ptr_mutex);
+			break;
+		}
+
+		uint8_t * local_send_ptr = *(canvas->vdb_fg);
+		canvas->fg_has_changed = false;
+																				        
+		pthread_mutex_unlock(&canvas->ptr_mutex);
+
+		fwrite(local_send_ptr, 1, frame_bytes, ffplay_pipe);
+		fflush(ffplay_pipe); 
+	}
+
+	pclose(ffplay_pipe);
+	return NULL;
+#endif
+}
+
+void pp_canvas_engine_start(pp_canvas_t * canvas)
+{
+	PP_FFPLAY_PIPELINE_LAUNCH(canvas);
+}
+
 
 #endif /* PP_CANVAS_IMPLEMENTATION */

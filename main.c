@@ -1,3 +1,4 @@
+#define X86_ARCH
 #define PP_MEM_IMPLEMENTATION
 #include <helper/pp_mem.h>
 
@@ -9,6 +10,9 @@
 
 #define PP_AREA_DSC_DRAW_IMPLEMENTATION
 #include <draw/pp_area_dsc_draw.h>
+
+#define PP_THREAD_IMPLEMENTATION
+#include <thread/pp_thread.h>
 
 #include <image/ui_avatar.h>
 #include <image/person.h>
@@ -100,11 +104,13 @@ int main(void)
     pp_display_refr_timer();
     pp_canvas_export_ppm(global_display->canvas, "iris_gfx_output2.ppm");
 
+	pp_canvas_engine_start(global_display->canvas);
     // -------------------------------------------------------------------------
     // 4. 清理物理显示驱动，完美退场
     // -------------------------------------------------------------------------
     pp_disp_deinit();
     PP_MAIN_INFO("Pipeline shutdown cleanly. Test completely passed.");
+
     
     return 0;
 }
