@@ -27,13 +27,13 @@ extern "C" {
 #define PP_THREAD_ERROR(fmt,...) fprintf(stderr,"THREAD ERROR:"fmt"\n",##__VA_ARGS__)
 #endif // PP_THREAD_INFO
 
-#define PP_FFPLAY_PIPELINE_LAUNCH(canvas_ptr) do { \
+#define PP_FFPLAY_PIPELINE_LAUNCH(th_arg) do { \
 	pp_thread_attr_t _cfg = {					   \
 		.name = "pp_ffplay_dma",                   \
 		.stack_size = 64 * 1024,                   \
 		.is_detach = true                          \
 	};                                             \
-	pthread_t _pid = pp_thread_create(pp_ffplay_consumer_thread, (void *)(canvas_ptr), &_cfg); \
+	pthread_t _pid = pp_thread_create(pp_ffplay_consumer_thread, (void *)(th_arg), &_cfg); \
 	if (_pid == 0) PP_THREAD_ERROR("🚨 [CRITICAL] Crash initializing system asynchronous pipeline!");		\
 } while(0)
 

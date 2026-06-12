@@ -10,7 +10,15 @@
 #include "helper/pp_mem.h"
 #include <string.h>
 
-pp_disp_t * global_display = NULL;
+static pp_disp_t * global_display = NULL;
+
+pp_disp_t * pp_disp_get_instance(void)
+{
+	if(!global_display){
+		PP_DISP_INFO("Attempted to get instance before initialization!");
+	}
+	return global_display;
+}
 
 bool pp_disp_init(int32_t hor_res, int32_t ver_res, pp_render_mode_t mode, uint32_t max_rows)
 {

@@ -9,6 +9,7 @@
 #include <string.h>
 #include <core/pp_obj.h>
 #include <core/pp_obj_class.h>
+#include <core/pp_disp.h>
 #include <helper/pp_mem.h>
 
 /*oOoOoOoOoOoOoOoO
@@ -35,7 +36,8 @@ pp_obj_t * pp_obj_class_create_obj(const pp_obj_class_t *class_p, pp_obj_t * par
 	obj->parent = parent;
 	
 	if(parent == NULL){
-		// TODO pp_display_get_default();
+		pp_disp_t * global_display = pp_disp_get_instance();
+		PP_ASSERT(global_display);
 	} else {
 		if(parent->spec_attr == NULL){
 			pp_obj_allocate_spec_attr(parent);
@@ -58,7 +60,7 @@ void pp_obj_class_init_obj(pp_obj_t * obj)
 	pp_obj_t * parent = obj->parent;
 	if(parent){
 		// TODO pp_obj_send_event();
-		// TODO pp_obj_invalidate();
+		pp_disp_invalidate_area(&obj->coords);
 	}
 }
 

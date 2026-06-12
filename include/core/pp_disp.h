@@ -29,7 +29,7 @@ typedef enum {
     PP_RENDER_MODE_PARTIAL    
 } pp_render_mode_t;
 
-typedef struct {
+typedef struct _pp_disp_s{
     pp_canvas_t * canvas;             // Hardware frame buffer binding
     pp_obj_t    * root_obj;           // Root node anchor anchoring the entire layout tree
     int32_t       hor_res;            // Active horizontal resolution
@@ -45,7 +45,7 @@ typedef struct {
 } pp_disp_t;
 
 /* Global instance anchor matching disp_def system */
-extern pp_disp_t * global_display;
+pp_disp_t * pp_disp_get_instance(void);
 
 /* Lifecycle and Invalidation API */
 bool pp_disp_init(int32_t hor_res, int32_t ver_res, pp_render_mode_t mode, uint32_t max_rows);

@@ -39,7 +39,7 @@ typedef struct {
     .r = (uint8_t)(((hex) >> 16) & 0xFF), \
     .g = (uint8_t)(((hex) >> 8 ) & 0xFF), \
     .b = (uint8_t)(((hex) >> 0 ) & 0xFF), \
-	.alpha = 255						  \
+	.alpha = 255\
 })
 
 typedef struct {

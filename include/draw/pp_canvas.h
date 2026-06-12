@@ -56,7 +56,7 @@ void          pp_canvas_destroy(pp_canvas_t * canvas);
 void          pp_canvas_clear(pp_canvas_t * canvas, uint8_t r, uint8_t g, uint8_t b);
 void          pp_canvas_export_ppm(const pp_canvas_t * canvas, const char * filename);
 void          pp_canvas_change_foreground_point(pp_canvas_t * canvas);
-void		  pp_canvas_engine_start(pp_canvas_t * canvas);
+void		  pp_canvas_engine_start(void);
 
 PP_WEAK void * pp_ffplay_consumer_thread(void *arg);
 
@@ -185,56 +185,38 @@ void pp_canvas_change_foreground_point(pp_canvas_t * canvas)
 
 }
 
-PP_WEAK void * pp_ffplay_consumer_thread(void * arg)
+static void pp_uv_push_frame_cb(uv_timer_t * handle)
 {
-	pp_canvas_t * canvas = (pp_canvas_t *)arg;
-	PP_CANVAS_INFO("Canvas : width [%d] height [%d]",canvas->width,canvas->height);
-	return NULL;
+	pp_disp_t * disp = pp_disp_get_instance();
+	PP_ASSERT(disp);
+	pp_canvas_t * canvas = disp->canvas;
+	PP_ASSERT(canvas);
 
-#if 0
-	pp_canvas_t * canvas = (pp_canvas_t *)arg;
-	size_t frame_bytes = (size_t)canvas->width * canvas->height * 3;
-
-	char cmd[256];
-	snprintf(cmd, sizeof(cmd), "ffplay -f rawvideo -pixel_format rgb24 -video_size %dx%d -framerate 60 -i -", 
-			 canvas->width, canvas->height);
-
-	FILE * ffplay_pipe = popen(cmd, "w");
-	if (!ffplay_pipe) {
-		PP_CANVAS_ERROR("🚨 [FRAMEWORK WARNING] Default ffplay pipe failed to launch!");
-		return NULL;
-	}
-
-	PP_CANVAS_INFO("💡 [FRAMEWORK] Default weak ffplay consumer thread is running...");
-
-	while (canvas->is_running) {
-		pthread_mutex_lock(&canvas->ptr_mutex);
-		while (!canvas->fg_has_changed && canvas->is_running) {
-			pthread_cond_wait(&canvas->ptr_cond, &canvas->ptr_mutex);
-		}
-
-		if (!canvas->is_running) {
-			pthread_mutex_unlock(&canvas->ptr_mutex);
-			break;
-		}
-
-		uint8_t * local_send_ptr = *(canvas->vdb_fg);
-		canvas->fg_has_changed = false;
-																				        
-		pthread_mutex_unlock(&canvas->ptr_mutex);
-
-		fwrite(local_send_ptr, 1, frame_bytes, ffplay_pipe);
-		fflush(ffplay_pipe); 
-	}
-
-	pclose(ffplay_pipe);
-	return NULL;
-#endif
+	PP_CANVAS_GET_FG(canvas);
 }
 
-void pp_canvas_engine_start(pp_canvas_t * canvas)
+PP_WEAK void * pp_ffplay_consumer_thread(void * arg)
 {
-	PP_FFPLAY_PIPELINE_LAUNCH(canvas);
+	PP_ASSERT(arg);
+	pp_canvas_t * canvas = (pp_canvas_t *)arg;
+
+	uv_loop_t * loop = uv_default_loop();
+
+	uv_timer_t timer_handle;
+	uv_timer_init(loop, &timer_handle);
+
+	uv_timer_start(&timer_handle, pp_uv_push_frame_cb, 16, 16);
+
+	uv_run(loop, UV_RUN_DEFAULT);
+
+	uv_loop_close(loop);
+	free(loop);
+	return NULL;
+}
+
+void pp_canvas_engine_start(void)
+{
+	PP_FFPLAY_PIPELINE_LAUNCH(NULL);
 }
 
 

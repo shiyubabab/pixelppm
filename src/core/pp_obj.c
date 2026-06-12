@@ -10,6 +10,7 @@
 #include <string.h>
 #include <core/pp_obj.h>
 #include <core/pp_obj_class.h>
+#include <core/pp_disp.h>
 #include <helper/pp_mem.h>
 
 #define MY_CLASS &pp_obj_class
@@ -31,9 +32,8 @@ const pp_obj_class_t pp_obj_class = {
 };
 
 const pp_style_t pp_obj_style = {
-	.bg_color = {0,0,0},
+	.bg_color = {0,0,0,255},
 	.radius = 0,
-	.bg_opa = 255
 };
 
 pp_obj_t * pp_obj_create(pp_obj_t * parent)
@@ -81,6 +81,9 @@ void pp_obj_set_pos(pp_obj_t * obj, int32_t x, int32_t y)
 {
 	pp_obj_t * p = pp_obj_get_parent(obj);
     if (!obj || !p) return;
+
+	pp_disp_invalidate_area(&obj->coords);
+
     int32_t w = pp_area_get_width(&obj->coords);
     int32_t h = pp_area_get_height(&obj->coords);
 
@@ -91,6 +94,8 @@ void pp_obj_set_pos(pp_obj_t * obj, int32_t x, int32_t y)
     obj->coords.y1 = py + y;
     obj->coords.x2 = px + x + w - 1;
     obj->coords.y2 = py + y + h - 1;
+
+	pp_disp_invalidate_area(&obj->coords);
 }
 
 void pp_obj_set_size(pp_obj_t * obj, int32_t w, int32_t h)
@@ -101,6 +106,8 @@ void pp_obj_set_size(pp_obj_t * obj, int32_t w, int32_t h)
 
     obj->coords.x2 = obj->coords.x1 + w - 1;
     obj->coords.y2 = obj->coords.y1 + h - 1;
+
+	pp_disp_invalidate_area(&obj->coords);
 }
 
 void pp_obj_set_bg_color(pp_obj_t * obj, pp_color_t color)
@@ -112,6 +119,21 @@ void pp_obj_set_bg_color(pp_obj_t * obj, pp_color_t color)
 
 	PP_OBJ_INFO("set obj color: r %d g %d b %d",color.r,color.g,color.b);
 	local_s->bg_color = color;
+
+	pp_disp_invalidate_area(&obj->coords);
+}
+
+void pp_obj_set_bg_opa(pp_obj_t * obj, uint8_t opa)
+{
+    if (!obj) return;
+
+	pp_style_t * local_s = pp_obj_ensure_local_style(obj);
+	if(!local_s) return ;
+
+	PP_OBJ_INFO("set obj opa: %d",opa);
+	local_s->bg_color.alpha = opa;
+
+	pp_disp_invalidate_area(&obj->coords);
 }
 
 
@@ -123,6 +145,7 @@ void pp_obj_set_radius(pp_obj_t * obj, int32_t radius)
 	if(!local_s) return ;
 
 	local_s->radius = radius;
+	pp_disp_invalidate_area(&obj->coords);
 }
 
 
@@ -140,6 +163,8 @@ void pp_obj_set_style(pp_obj_t * obj,const pp_style_t * style)
 {
     if (!obj) return;
 	obj->style = (pp_style_t *)style;
+
+	pp_disp_invalidate_area(&obj->coords);
 }
 
 pp_style_t * pp_obj_get_style(const pp_obj_t * obj)
@@ -156,6 +181,7 @@ void pp_obj_set_image_src(pp_obj_t * obj, const pp_image_t * img_src)
 
 	if(!local_s->img_src) local_s->img_src = img_src;
 
+	pp_disp_invalidate_area(&obj->coords);
 }
 
 static void pp_obj_constructor(const pp_obj_class_t * class_p, pp_obj_t * obj)
@@ -220,7 +246,6 @@ static pp_style_t * pp_obj_ensure_local_style(pp_obj_t * obj)
 		} else {
 			local_style->bg_color = PP_COLOR_HEX(0x000000);
 			local_style->radius = 0;
-			local_style->bg_opa = 255;
 		}
 
 		obj->style = local_style;

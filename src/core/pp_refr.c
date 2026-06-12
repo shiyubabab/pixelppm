@@ -24,6 +24,8 @@ static void pp_refr_obj_and_children(pp_canvas_t * canvas, pp_obj_t * obj, const
 
 void pp_display_refr_timer(void)
 {
+	pp_disp_t * global_display = pp_disp_get_instance();
+	PP_ASSERT(global_display);
     if (global_display && global_display->inv_p != 0) {
 		// Phase 1: Optimize overlap bounding layouts
 		pp_refr_join_area();
@@ -42,6 +44,9 @@ void pp_display_refr_timer(void)
 
 static void pp_refr_join_area(void)
 {
+	pp_disp_t * global_display = pp_disp_get_instance();
+	PP_ASSERT(global_display);
+
     uint32_t join_from;
     uint32_t join_in;
     pp_area_t joined_area;
@@ -70,6 +75,9 @@ static void pp_refr_join_area(void)
 
 static void pp_refr_invalid_areas(void)
 {
+	pp_disp_t * global_display = pp_disp_get_instance();
+	PP_ASSERT(global_display);
+
     for (uint32_t i = 0; i < global_display->inv_p; i++) {
         if (global_display->inv_area_joined[i]) continue;
 
@@ -104,6 +112,9 @@ static void pp_refr_invalid_areas(void)
 static void pp_refr_area(const pp_area_t * area_p)
 {
     // Point core drawer downstream targeting root layout trees bound inside the sub-slice clip window
+	pp_disp_t * global_display = pp_disp_get_instance();
+	PP_ASSERT(global_display);
+
     pp_refr_obj_and_children(global_display->canvas, global_display->root_obj, area_p);
 }
 

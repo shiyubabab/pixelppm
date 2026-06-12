@@ -34,6 +34,7 @@ int main(void)
         PP_MAIN_ERROR("Failed to initialize physical Display layer.");
         return -1;
     }
+	pp_disp_t * global_display = pp_disp_get_instance();
 
     // 调用你添加的颜色宏，一键让全局大墙纸染上深邃色调
     pp_obj_set_bg_color(global_display->root_obj, PP_COLOR_HEX(0x1A1C23));
@@ -62,6 +63,7 @@ int main(void)
     pp_obj_t * my_button = pp_obj_create(global_display->root_obj);
     pp_obj_set_pos(my_button, 180, 50); // 初始落脚点
     pp_obj_set_size(my_button, 100, 50);
+	//pp_obj_set_radius(my_button,5);
     pp_obj_set_bg_color(my_button, PP_COLOR_HEX(0xFFFFFF)); // 初始纯白色
 
     // =========================================================================
@@ -70,7 +72,7 @@ int main(void)
     PP_MAIN_INFO("====== Executing Frame 1: Core System Initialization ======");
     
     // 全屏报脏以加载首帧底画
-    pp_disp_invalidate_area(&global_display->root_obj->coords);
+    //pp_disp_invalidate_area(&global_display->root_obj->coords);
     
     // 调用已经移位重构的专门刷新时钟函数！
     pp_display_refr_timer();
@@ -83,16 +85,12 @@ int main(void)
     // =========================================================================
     PP_MAIN_INFO("====== Executing Frame 2: Decoupled Partial Refreshing ======");
 
-    // 💡 工业级最高标准防线：在更改控件几何形态前，【先】将它的【旧坐标区域】标记为脏！
-    pp_area_t old_coords = my_button->coords;
-    pp_disp_invalidate_area(&old_coords);
-
     // 挪动目标：大跨度飘移到右下角，并一键完成粉红换装
     pp_obj_set_pos(my_button, 250, 240);
     pp_obj_set_bg_color(my_button, PP_COLOR_HEX(0xE91E63));
+    pp_obj_set_bg_opa(my_button, 100);
     
     // 【再】将它的【新坐标区域】标记为脏！
-    pp_disp_invalidate_area(&my_button->coords);
 
     // 运筹帷幄：大步流星调用专门的独立刷新引擎进行局部消灭战！
     pp_display_refr_timer();
@@ -100,11 +98,7 @@ int main(void)
     pp_canvas_export_ppm(global_display->canvas, "iris_gfx_output1.ppm");
     PP_MAIN_INFO("Frame 2 assets outputted to 'iris_gfx_output1.ppm'");
 
-
-    pp_display_refr_timer();
-    pp_canvas_export_ppm(global_display->canvas, "iris_gfx_output2.ppm");
-
-	pp_canvas_engine_start(global_display->canvas);
+	pp_canvas_engine_start();
     // -------------------------------------------------------------------------
     // 4. 清理物理显示驱动，完美退场
     // -------------------------------------------------------------------------

@@ -27,7 +27,6 @@
 typedef struct {
     pp_color_t bg_color;
     int32_t radius;
-    uint8_t bg_opa;
 	const pp_image_t * img_src;
 } pp_style_t;
 
@@ -67,6 +66,7 @@ pp_obj_t * pp_obj_get_child_by_index(const pp_obj_t * obj, size_t index);
 void       pp_obj_set_pos(pp_obj_t * obj, int32_t x, int32_t y);
 void       pp_obj_set_size(pp_obj_t * obj, int32_t w, int32_t h);
 void       pp_obj_set_bg_color(pp_obj_t * obj, pp_color_t color);
+void       pp_obj_set_bg_opa(pp_obj_t * obj, uint8_t opa);
 void       pp_obj_set_radius(pp_obj_t * obj, int32_t radius);
 int32_t    pp_obj_get_width(const pp_obj_t * obj);
 int32_t    pp_obj_get_height(const pp_obj_t * obj);
