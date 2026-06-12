@@ -9,14 +9,14 @@
 #ifndef PP_AREA_DSC_DRAW_H
 #define PP_AREA_DSC_DRAW_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <helper/pp_area.h>
 #include "pp_canvas.h" // Bind cleanly with the newly established pp_canvas_t
 #include <stdint.h>
 #include <stdbool.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifndef PP_DSC_DRAW_INFO
 #define PP_DSC_DRAW_INFO(fmt,...) fprintf(stdout,"DRAW INFO %s %d:"fmt"\n",__func__,__LINE__,##__VA_ARGS__)

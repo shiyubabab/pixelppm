@@ -12,6 +12,7 @@
 #define INCLUDE_DIR    "./include/"
 #define SRC_DIR        "./src/"
 #define CORE_SRC_DIR   SRC_DIR"core/"
+#define SHOW_SRC_DIR   SRC_DIR"display/"
 
 /**
  * @brief Initialize base compiler configurations
@@ -63,6 +64,7 @@ void cc_main(Varray *cmd)
     nob_cmd_append(cmd, CORE_SRC_DIR"pp_obj_class.c");
     nob_cmd_append(cmd, CORE_SRC_DIR"pp_disp.c");
     nob_cmd_append(cmd, CORE_SRC_DIR"pp_refr.c");
+    nob_cmd_append(cmd, SHOW_SRC_DIR"pp_show.c");
 
     // 3. Setup the absolute executable artifact output naming target
     nob_cmd_append(cmd, "-o", "go");

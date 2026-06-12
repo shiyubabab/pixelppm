@@ -16,7 +16,6 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
-#include "thread/pp_thread.h"
 
 #ifndef PP_CANVAS_INFO
 #include <stdio.h>
@@ -30,9 +29,6 @@ extern "C" {
 #define PP_CANVAS_GET_BG(canvas_ptr) \
 	((canvas_ptr)->buffer +(((canvas_ptr)->curr_p == 0)?(canvas_ptr)->buffer_size:0))
 
-#ifndef PP_WEAK
-#define PP_WEAK  __attribute__((weak))
-#endif
 
 /*oOoOoOoOoOoOoOoOoOoO
  * DATA STRUCTURES
@@ -56,9 +52,7 @@ void          pp_canvas_destroy(pp_canvas_t * canvas);
 void          pp_canvas_clear(pp_canvas_t * canvas, uint8_t r, uint8_t g, uint8_t b);
 void          pp_canvas_export_ppm(const pp_canvas_t * canvas, const char * filename);
 void          pp_canvas_change_foreground_point(pp_canvas_t * canvas);
-void		  pp_canvas_engine_start(void);
 
-PP_WEAK void * pp_ffplay_consumer_thread(void *arg);
 
 #ifdef __cplusplus
 }
@@ -184,40 +178,5 @@ void pp_canvas_change_foreground_point(pp_canvas_t * canvas)
 	pp_memcpy(canvas->buffer + last_p, canvas->buffer + canvas->curr_p, canvas->buffer_size);
 
 }
-
-static void pp_uv_push_frame_cb(uv_timer_t * handle)
-{
-	pp_disp_t * disp = pp_disp_get_instance();
-	PP_ASSERT(disp);
-	pp_canvas_t * canvas = disp->canvas;
-	PP_ASSERT(canvas);
-
-	PP_CANVAS_GET_FG(canvas);
-}
-
-PP_WEAK void * pp_ffplay_consumer_thread(void * arg)
-{
-	PP_ASSERT(arg);
-	pp_canvas_t * canvas = (pp_canvas_t *)arg;
-
-	uv_loop_t * loop = uv_default_loop();
-
-	uv_timer_t timer_handle;
-	uv_timer_init(loop, &timer_handle);
-
-	uv_timer_start(&timer_handle, pp_uv_push_frame_cb, 16, 16);
-
-	uv_run(loop, UV_RUN_DEFAULT);
-
-	uv_loop_close(loop);
-	free(loop);
-	return NULL;
-}
-
-void pp_canvas_engine_start(void)
-{
-	PP_FFPLAY_PIPELINE_LAUNCH(NULL);
-}
-
 
 #endif /* PP_CANVAS_IMPLEMENTATION */

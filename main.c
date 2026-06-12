@@ -20,6 +20,7 @@
 #include <core/pp_obj.h>
 #include <core/pp_disp.h>
 #include <core/pp_refr.h> 
+#include <display/pp_show.h> 
 
 #ifndef PP_MAIN_INFO 
 #include <stdio.h>
@@ -98,7 +99,7 @@ int main(void)
     pp_canvas_export_ppm(global_display->canvas, "iris_gfx_output1.ppm");
     PP_MAIN_INFO("Frame 2 assets outputted to 'iris_gfx_output1.ppm'");
 
-	pp_canvas_engine_start();
+	pp_show_engine_start();
     // -------------------------------------------------------------------------
     // 4. 清理物理显示驱动，完美退场
     // -------------------------------------------------------------------------
