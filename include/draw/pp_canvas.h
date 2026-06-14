@@ -16,6 +16,7 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <pthread.h>
 
 #ifndef PP_CANVAS_INFO
 #include <stdio.h>
@@ -41,6 +42,7 @@ typedef struct {
     int32_t width;          // Horizontal dimensions in pixels
     int32_t height;         // Vertical dimensions in pixels
     size_t buffer_size;     // Pre-calculated byte budget (width * height * 3)
+	pthread_mutex_t ptr_mutex;
 } pp_canvas_t;
 
 /*oOoOoOoOoOoOoOoOoOoO
@@ -100,6 +102,8 @@ pp_canvas_t * pp_canvas_create(int32_t w, int32_t h)
         return NULL;
     }
 
+	pthread_mutex_init(&canvas->ptr_mutex,NULL);
+
     // 3. Wash the canvas clean initially to midnight-blue base default coloration
     pp_canvas_clear(canvas, 30, 32, 40);
 
@@ -131,9 +135,9 @@ void pp_canvas_clear(pp_canvas_t * canvas, uint8_t r, uint8_t g, uint8_t b)
     }
 
     for (size_t i = 0; i < (size_t)canvas->width * canvas->height; i++) {
-        PP_CANVAS_GET_FG(canvas)[i * 3 + 0] = r;
-        PP_CANVAS_GET_FG(canvas)[i * 3 + 1] = g;
-        PP_CANVAS_GET_FG(canvas)[i * 3 + 2] = b;
+        PP_CANVAS_GET_BG(canvas)[i * 3 + 0] = r;
+        PP_CANVAS_GET_BG(canvas)[i * 3 + 1] = g;
+        PP_CANVAS_GET_BG(canvas)[i * 3 + 2] = b;
     }
 }
 
@@ -171,8 +175,11 @@ void pp_canvas_change_foreground_point(pp_canvas_t * canvas)
         return;
     }
 
+	pthread_mutex_lock(&canvas->ptr_mutex);
 	size_t last_p = canvas->curr_p;
 	canvas->curr_p = (canvas->curr_p == 0) ? canvas->buffer_size: 0;
+	pthread_mutex_unlock(&canvas->ptr_mutex);
+
     PP_CANVAS_INFO("We are changing the foreground point: [%zu] - > [%zu]",last_p,canvas->curr_p);
 
 	pp_memcpy(canvas->buffer + last_p, canvas->buffer + canvas->curr_p, canvas->buffer_size);
