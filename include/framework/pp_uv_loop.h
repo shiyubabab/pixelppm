@@ -17,7 +17,9 @@ void pp_loop_start(void);
 
 #endif // PP_UV_LOOP_H
 
-#ifdef PP_UV_LOOP_IMPLEMENTATION
+#if defined(PP_UV_LOOP_IMPLEMENTATION) && !defined(PP_UV_LOOP_IMPLEMENTATION_DONE)
+#define PP_UV_LOOP_IMPLEMENTATION_DONE
+
 #include <uv.h>
 #include "core/pp_refr.h"
 #include "image/ui_avatar.h"

@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include <pthread.h>
+#include <stdbool.h>
 #include <errno.h>
 
 #define handle_error_en(en, msg) \

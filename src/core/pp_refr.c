@@ -9,12 +9,40 @@
 #include "core/pp_refr.h"
 #include "draw/pp_area_dsc_draw.h"
 #include "core/pp_obj.h"
+#include "thread/pp_pool.h"
 #include <string.h>
 
 #ifndef PP_REFR_INFO
 #define PP_REFR_INFO(fmt,...) fprintf(stdout,"REFR INFO %s %d:"fmt"\n",__func__,__LINE__,##__VA_ARGS__)
 #define PP_REFR_ERROR(fmt,...) fprintf(stderr,"REFR INFO %s %d:"fmt"\n",__func__,__LINE__,##__VA_ARGS__)
 #endif // PP_REFR_INFO
+
+typedef struct {
+	pp_canvas_t	  * canvas;
+	pp_area_t       obj_box;
+	pp_area_t       draw_box;
+	pp_draw_dsc_t   draw_dsc;
+} pp_draw_args_t;
+
+void pp_draw_rect(void * user_data)
+{
+	PP_ASSERT(user_data);
+	pp_draw_args_t * args = (pp_draw_args_t *)user_data;
+
+	pp_canvas_draw_rect(args->canvas, &args->draw_box, &args->draw_dsc);
+
+	pp_free(args);
+}
+
+void pp_draw_image(void * user_data)
+{
+	PP_ASSERT(user_data);
+	pp_draw_args_t * args = (pp_draw_args_t *)user_data;
+
+	pp_canvas_draw_image(args->canvas, &args->obj_box, &args->draw_box, &args->draw_dsc);
+
+	pp_free(args);
+}
 
 /* Internal subroutines clone directly matching lv_refr.c core logic mapping */
 static void pp_refr_join_area(void);
@@ -137,7 +165,6 @@ static void pp_refr_obj_and_children(pp_canvas_t * canvas, pp_obj_t * obj, const
 		if(style->img_src){
 			is_rect = false;
 			draw_dsc.src = style->img_src;
-			PP_REFR_INFO("The obj is image, draw...");
 		} else {
 			draw_dsc.color = style->bg_color;
 			draw_dsc.radius = style->radius;
@@ -147,8 +174,14 @@ static void pp_refr_obj_and_children(pp_canvas_t * canvas, pp_obj_t * obj, const
 		draw_dsc.radius = MY_STYLE->radius;
 	}
 
-	if(is_rect) pp_canvas_draw_rect(canvas, &draw_box, &draw_dsc);
-	else pp_canvas_draw_image(canvas,&obj->coords,&draw_box,&draw_dsc);
+	pp_draw_args_t * user_data = (pp_draw_args_t *)pp_malloc(sizeof(pp_draw_args_t));
+	user_data->canvas   = canvas;
+	user_data->obj_box  = obj->coords;
+	user_data->draw_box = draw_box;
+	user_data->draw_dsc = draw_dsc;
+
+	if(is_rect) pp_thread_pool_submit(pp_draw_rect,user_data);
+	else pp_thread_pool_submit(pp_draw_image,user_data);
 
 	size_t child_cnt = pp_obj_get_child_cnt(obj);
 	for (size_t i = 0; i < child_cnt; i++) {
