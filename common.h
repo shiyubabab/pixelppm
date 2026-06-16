@@ -19,10 +19,12 @@
 #define PP_QUEUE_IMPLEMENTATION
 #define PP_TASK_IMPLEMENTATION
 #define PP_POOL_IMPLEMENTATION
+#define PP_SYNC_IMPLEMENTATION
 #include <thread/pp_thread.h>
 #include <thread/pp_queue.h>
 #include <thread/pp_task.h>
 #include <thread/pp_pool.h>
+#include <thread/pp_sync.h>
 
 #include <core/pp_obj.h>
 #include <core/pp_disp.h>

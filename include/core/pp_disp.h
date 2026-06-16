@@ -11,6 +11,7 @@
 
 #include "draw/pp_canvas.h"
 #include "core/pp_obj.h"
+#include "thread/pp_sync.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -42,6 +43,7 @@ typedef struct _pp_disp_s{
     
     pp_render_mode_t render_mode;     // Active buffer flush logic
     uint32_t         max_partial_rows;// Slicing stride limit for partial mode
+	pp_sync_t * sync;
 } pp_disp_t;
 
 /* Global instance anchor matching disp_def system */

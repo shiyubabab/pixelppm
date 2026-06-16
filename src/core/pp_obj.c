@@ -184,6 +184,12 @@ void pp_obj_set_image_src(pp_obj_t * obj, const pp_image_t * img_src)
 	pp_disp_invalidate_area(&obj->coords);
 }
 
+void pp_obj_del(pp_obj_t * obj)
+{
+    if (!obj) return;
+	_pp_obj_destruct(obj);
+}
+
 static void pp_obj_constructor(const pp_obj_class_t * class_p, pp_obj_t * obj)
 {
     PP_OBJ_INFO("Basic Object initialization injected: '%s'", class_p->name);

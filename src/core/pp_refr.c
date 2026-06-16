@@ -10,6 +10,7 @@
 #include "draw/pp_area_dsc_draw.h"
 #include "core/pp_obj.h"
 #include "thread/pp_pool.h"
+#include "thread/pp_sync.h"
 #include <string.h>
 
 #ifndef PP_REFR_INFO
@@ -28,20 +29,24 @@ void pp_draw_rect(void * user_data)
 {
 	PP_ASSERT(user_data);
 	pp_draw_args_t * args = (pp_draw_args_t *)user_data;
-
 	pp_canvas_draw_rect(args->canvas, &args->draw_box, &args->draw_dsc);
-
 	pp_free(args);
+
+	pp_disp_t * global_display = pp_disp_get_instance();
+	PP_ASSERT(global_display);
+	pp_sync_dec(global_display->sync);
 }
 
 void pp_draw_image(void * user_data)
 {
 	PP_ASSERT(user_data);
 	pp_draw_args_t * args = (pp_draw_args_t *)user_data;
-
 	pp_canvas_draw_image(args->canvas, &args->obj_box, &args->draw_box, &args->draw_dsc);
-
 	pp_free(args);
+
+	pp_disp_t * global_display = pp_disp_get_instance();
+	PP_ASSERT(global_display);
+	pp_sync_dec(global_display->sync);
 }
 
 /* Internal subroutines clone directly matching lv_refr.c core logic mapping */
@@ -67,6 +72,7 @@ void pp_display_refr_timer(void)
 		global_display->inv_p = 0;
 	}
 
+	pp_sync_wait_zero(global_display->sync);
 	pp_canvas_change_foreground_point(global_display->canvas);
 }
 
@@ -180,6 +186,9 @@ static void pp_refr_obj_and_children(pp_canvas_t * canvas, pp_obj_t * obj, const
 	user_data->draw_box = draw_box;
 	user_data->draw_dsc = draw_dsc;
 
+	pp_disp_t * global_display = pp_disp_get_instance();
+	PP_ASSERT(global_display);
+	pp_sync_inc(global_display->sync);
 	if(is_rect) pp_thread_pool_submit(pp_draw_rect,user_data);
 	else pp_thread_pool_submit(pp_draw_image,user_data);
 

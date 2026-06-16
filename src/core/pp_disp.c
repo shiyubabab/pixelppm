@@ -48,6 +48,14 @@ bool pp_disp_init(int32_t hor_res, int32_t ver_res, pp_render_mode_t mode, uint3
         return false;
     }
 
+    global_display->sync = (pp_sync_t *)pp_malloc(sizeof(pp_sync_t));
+	if(!global_display->sync){
+		pp_obj_del(global_display->root_obj);
+        pp_canvas_destroy(global_display->canvas);
+        pp_free(global_display);
+		return false;
+	}
+
     // Force base node boundaries to stretch safely across full screen resolution bounds
     global_display->root_obj->parent = NULL;
     global_display->root_obj->coords.x1 = 0;
@@ -68,6 +76,7 @@ void pp_disp_deinit(void)
     if (!global_display) return;
     if (global_display->canvas) pp_canvas_destroy(global_display->canvas);
     if (global_display->root_obj) pp_free(global_display->root_obj);
+    if (global_display->sync) pp_free(global_display->sync);
     pp_free(global_display);
     global_display = NULL;
     PP_DISP_INFO("Display device context destroyed successfully.");
