@@ -73,7 +73,7 @@ void pp_display_refr_timer(void)
 	}
 
 	pp_sync_wait_zero(global_display->sync);
-	pp_canvas_change_foreground_point(global_display->canvas);
+	//pp_canvas_change_foreground_point(global_display->canvas);
 }
 
 static void pp_refr_join_area(void)

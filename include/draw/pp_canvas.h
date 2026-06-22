@@ -38,7 +38,7 @@ extern "C" {
 // Canvas entity packed with physical geometry and buffer metadata
 typedef struct {
     uint8_t * buffer;       // Raw RGB data stream pointer
-	size_t curr_p;
+	size_t volatile curr_p;
     int32_t width;          // Horizontal dimensions in pixels
     int32_t height;         // Vertical dimensions in pixels
     size_t buffer_size;     // Pre-calculated byte budget (width * height * 3)

@@ -12,6 +12,7 @@
 #include "draw/pp_canvas.h"
 #include "core/pp_obj.h"
 #include "thread/pp_sync.h"
+#include <uv.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -43,7 +44,22 @@ typedef struct _pp_disp_s{
     
     pp_render_mode_t render_mode;     // Active buffer flush logic
     uint32_t         max_partial_rows;// Slicing stride limit for partial mode
-	pp_sync_t * sync;
+	pp_sync_t * sync; // All threads arrive
+
+	/* for display and ui threads
+	 * TODO : V-Sync
+	 */
+	bool v_sync_ready; // V-Sync : allow ui thread to render
+	bool render_complete; // It is new canvas display
+
+	uv_loop_t * render_loop;
+	uv_loop_t * display_loop;
+
+	uv_async_t async_to_display;
+	uv_async_t async_to_ui;
+
+	uv_mutex_t lock;
+
 } pp_disp_t;
 
 /* Global instance anchor matching disp_def system */

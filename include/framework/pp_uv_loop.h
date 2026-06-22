@@ -24,6 +24,8 @@ void pp_loop_start(void);
 #include "core/pp_refr.h"
 #include "image/ui_avatar.h"
 
+uv_timer_t timer_handle;
+
 static void pp_input_process(void)
 {
 	PP_UV_INFO("TODO pp_input_process");
@@ -41,28 +43,66 @@ static void pp_draw_frame(void)
 	pp_obj_set_image_src(oo,&my_avatar);
 	pp_obj_set_size(oo,my_avatar.width,my_avatar.height);
 
+	pp_obj_t * oo1 = pp_obj_create(global_display->root_obj);
+	pp_obj_set_pos(oo1,250,250);
+	pp_obj_set_image_src(oo1,&my_avatar);
+	pp_obj_set_size(oo1,my_avatar.width,my_avatar.height);
+
 }
+
+static bool can_render= false;
 
 static void pp_render_pipeline_cb(uv_timer_t *handle)
 {
-	PP_ASSERT(handle);
+	pp_disp_t * global_display = pp_disp_get_instance();
+	PP_ASSERT(handle && global_display);
 	pp_input_process();
 	pp_draw_frame();
-	pp_display_refr_timer();
+
+	if(can_render){
+		pp_display_refr_timer();
+		uv_mutex_lock(&global_display->lock);
+		global_display->render_complete = true;
+		uv_mutex_unlock(&global_display->lock);
+		uv_async_send(&global_display->async_to_display);
+	}
+
+	uv_timer_start(&timer_handle,pp_render_pipeline_cb,0,0);
+}
+
+void on_vsync_signal_from_display(uv_async_t * handle){
+	pp_disp_t * global_display = pp_disp_get_instance();
+	PP_ASSERT(handle && global_display);
+
+	can_render= false;
+	uv_mutex_lock(&global_display->lock);
+	if(global_display->v_sync_ready && !global_display->render_complete){
+		can_render = true;
+		global_display->v_sync_ready = false;
+	}
+	uv_mutex_unlock(&global_display->lock);
 }
 
 void pp_loop_start(void)
 {
-	uv_loop_t *loop = uv_default_loop();
-	uv_timer_t timer_handle;
+	pp_disp_t * global_display = pp_disp_get_instance();
+	if(!global_display){
+		PP_UV_ERROR("Fail to get global display");
+		return;
+	}
 
-	uv_timer_init(loop,&timer_handle);
 
-	uv_timer_start(&timer_handle,pp_render_pipeline_cb,0,10);
+	uv_loop_t* render_loop = uv_default_loop();
+	global_display->render_loop = render_loop;
+	uv_async_init(render_loop,&global_display->async_to_ui,on_vsync_signal_from_display);
 
-	uv_run(loop, UV_RUN_DEFAULT);
+	uv_timer_init(render_loop,&timer_handle);
 
-	uv_loop_close(loop);
+	uv_timer_start(&timer_handle,pp_render_pipeline_cb,0,0);
+
+	uv_run(render_loop, UV_RUN_DEFAULT);
+
+	uv_loop_close(render_loop);
 }
 
 #endif//  PP_UV_LOOP_IMPLEMENTATION

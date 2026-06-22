@@ -20,9 +20,21 @@ static void pp_uv_push_frame_cb(uv_timer_t *handle)
 	pp_disp_t * disp = pp_disp_get_instance();
 	PP_ASSERT(disp && disp->canvas);
 
-	pp_canvas_t * canvas = disp->canvas;
+	bool do_swap = false;
+	uv_mutex_lock(&disp->lock);
+	if(disp->render_complete){
+		disp->render_complete = false;
+		do_swap = true;
+	}
+	disp->v_sync_ready = true;
+	uv_mutex_unlock(&disp->lock);
 
+	pp_canvas_t * canvas = disp->canvas;
 	size_t frame_bytes = canvas->buffer_size;
+
+	if(do_swap){
+		pp_canvas_change_foreground_point(canvas);
+	}
 
 	pthread_mutex_lock(&canvas->ptr_mutex);
 	uint8_t * local_flush_ptr = PP_CANVAS_GET_FG(canvas);
@@ -32,6 +44,15 @@ static void pp_uv_push_frame_cb(uv_timer_t *handle)
 		fwrite(local_flush_ptr, 1, frame_bytes, g_ffplay_pipe);
 		fflush(g_ffplay_pipe);
 	}
+
+	uv_async_send(&disp->async_to_ui);
+}
+
+void on_ui_complete_signal(uv_async_t * handle)
+{
+	pp_disp_t * disp = pp_disp_get_instance();
+	PP_ASSERT(disp && handle);
+	// TODO 
 }
 
 void * pp_ffplay_consumer_thread(void *arg)
@@ -61,6 +82,9 @@ void * pp_ffplay_consumer_thread(void *arg)
 		pclose(g_ffplay_pipe);
 		return arg;
 	}
+	disp->display_loop = disp_loop;
+
+	uv_async_init(disp_loop,&disp->async_to_display,on_ui_complete_signal);
 
 	uv_timer_t disp_timer_handle;
 	uv_timer_init(disp_loop, &disp_timer_handle);
@@ -71,6 +95,7 @@ void * pp_ffplay_consumer_thread(void *arg)
 
 	uv_loop_close(disp_loop);
 	free(disp_loop);
+	if(disp->display_loop) disp->display_loop = NULL;
 	if(g_ffplay_pipe){
 		pclose(g_ffplay_pipe);
 		g_ffplay_pipe = NULL;
